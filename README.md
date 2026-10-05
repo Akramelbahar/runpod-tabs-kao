@@ -51,13 +51,14 @@ From this repository's root in PowerShell, after installing Docker Desktop:
 
 ```powershell
 .\runpod\stage-handoff.ps1
-docker build --platform linux/amd64 -f runpod/Dockerfile.frets -t YOUR_DOCKERHUB_USERNAME/idealchords-frets:accepted-core-52a178b6 .
+docker build --platform linux/amd64 -f runpod/Dockerfile.frets -t akram/idealchords-frets:accepted-core-52a178b6 .
 docker login
-docker push YOUR_DOCKERHUB_USERNAME/idealchords-frets:accepted-core-52a178b6
+docker push akram/idealchords-frets:accepted-core-52a178b6
 ```
 
-Replace `YOUR_DOCKERHUB_USERNAME` with your Docker Hub account name and create
-the `idealchords-frets` repository as **private** before pushing. In RunPod,
+The `akram` namespace must be a Docker Hub account you own; Docker Hub will
+reject the push otherwise. Create the `idealchords-frets` repository as
+**private** under that account before pushing. In RunPod,
 add Docker Hub registry credentials, create a **Queue** Serverless endpoint by importing this
 image from the Docker registry, select CPU compute if offered, set
 `MIDI2FRETS_CPU_THREADS=4`, and use one maximum worker for the first test.
