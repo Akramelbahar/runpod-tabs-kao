@@ -1,8 +1,8 @@
 ARG CUDA_BASE=pytorch/pytorch:2.11.0-cuda12.8-cudnn9-runtime
 FROM ${CUDA_BASE}
 
-ARG RUNPOD_VERSION
-ARG MUSCRIPTOR_REF
+ARG RUNPOD_VERSION=1.12.0
+ARG MUSCRIPTOR_REF=d73147e75e5b9b0c0a79ebe154587db4fd603e0c
 RUN test -n "$RUNPOD_VERSION" && test -n "$MUSCRIPTOR_REF"
 RUN apt-get update && apt-get install -y --no-install-recommends git ffmpeg libsndfile1 ca-certificates \
     && rm -rf /var/lib/apt/lists/*

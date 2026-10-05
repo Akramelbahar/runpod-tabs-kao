@@ -1,14 +1,15 @@
 ARG CUDA_BASE=pytorch/pytorch:2.11.0-cuda12.8-cudnn9-runtime
 FROM ${CUDA_BASE}
 
-ARG RUNPOD_VERSION
-ARG WHISPERX_VERSION
-RUN test -n "$RUNPOD_VERSION" && test -n "$WHISPERX_VERSION"
+ARG RUNPOD_VERSION=1.12.0
+ARG WHISPERX_VERSION=3.8.6
+ARG DEMUCS_VERSION=4.1.0
+RUN test -n "$RUNPOD_VERSION" && test -n "$WHISPERX_VERSION" && test -n "$DEMUCS_VERSION"
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libsndfile1 ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-RUN python -m pip install --no-cache-dir "runpod==${RUNPOD_VERSION}" "whisperx==${WHISPERX_VERSION}"
+RUN python -m pip install --no-cache-dir "runpod==${RUNPOD_VERSION}" "whisperx==${WHISPERX_VERSION}" "demucs==${DEMUCS_VERSION}"
 
 WORKDIR /app
 COPY runpod/common.py runpod/lyrics_worker.py /app/
-# WHISPERX_MODEL must name a pinned ASR checkpoint; alignment models also need staging review.
+# Runtime: WHISPERX_MODEL is required; LYRICS_USE_DEMUCS=0 disables separation.
 CMD ["python", "lyrics_worker.py"]
