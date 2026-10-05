@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+ARG RUNPOD_VERSION=1.12.0
+RUN test -n "$RUNPOD_VERSION"
+RUN python -m pip install --no-cache-dir "runpod==${RUNPOD_VERSION}"
+
+# Stage the verified private handoff ZIP into runpod/vendor before building.
+# The ZIP is ignored by Git and is included only in this local build context.
+COPY runpod/vendor/accepted-core-app-handoff-v1-20261005.zip /tmp/handoff.zip
+RUN mkdir -p /opt/midi2frets && python -c "import zipfile; zipfile.ZipFile('/tmp/handoff.zip').extractall('/opt/midi2frets')"
+RUN python -m pip install --no-cache-dir -r /opt/midi2frets/requirements-core.txt
+RUN cd /opt/midi2frets && python verify_package.py
+
+WORKDIR /app
+COPY runpod/common.py runpod/frets_worker.py /app/
+CMD ["python", "frets_worker.py"]
