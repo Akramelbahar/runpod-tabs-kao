@@ -7,7 +7,7 @@ ARG DEMUCS_VERSION=4.1.0
 RUN test -n "$RUNPOD_VERSION" && test -n "$WHISPERX_VERSION" && test -n "$DEMUCS_VERSION"
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libsndfile1 ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-RUN python -m pip install --no-cache-dir "runpod==${RUNPOD_VERSION}" "whisperx==${WHISPERX_VERSION}" "demucs==${DEMUCS_VERSION}"
+RUN python -m pip install --break-system-packages --no-cache-dir "runpod==${RUNPOD_VERSION}" "whisperx==${WHISPERX_VERSION}" "demucs==${DEMUCS_VERSION}"
 
 WORKDIR /app
 COPY runpod/common.py runpod/lyrics_worker.py /app/

@@ -6,7 +6,7 @@ ARG MUSCRIPTOR_REF=d73147e75e5b9b0c0a79ebe154587db4fd603e0c
 RUN test -n "$RUNPOD_VERSION" && test -n "$MUSCRIPTOR_REF"
 RUN apt-get update && apt-get install -y --no-install-recommends git ffmpeg libsndfile1 ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-RUN python -m pip install --no-cache-dir "runpod==${RUNPOD_VERSION}" \
+RUN python -m pip install --break-system-packages --no-cache-dir "runpod==${RUNPOD_VERSION}" \
     "git+https://github.com/muscriptor/muscriptor.git@${MUSCRIPTOR_REF}"
 
 WORKDIR /app
