@@ -15,11 +15,27 @@ HANDOFF_SHA256 = "b4fcdb7a0c19b08b97fb5ab91d29bda47609ef2e60f4a4603bc8aac4453a93
 HANDOFF_NAME = "accepted-core-app-handoff-v1-20261005.zip"
 
 
+def handoff_archive() -> Path:
+    repo = os.getenv("MIDI2FRETS_HF_REPO", "").strip()
+    if repo:
+        revision = os.getenv("MIDI2FRETS_HF_REVISION", "").strip()
+        token = os.getenv("HF_TOKEN", "").strip()
+        if not revision:
+            raise RuntimeError("MIDI2FRETS_HF_REVISION must be pinned")
+        if not token:
+            raise RuntimeError("HF_TOKEN is required for the private midi2frets repository")
+        from huggingface_hub import hf_hub_download
+
+        return Path(hf_hub_download(repo_id=repo, filename=HANDOFF_NAME,
+                                    revision=revision, token=token))
+    return Path(os.getenv("MIDI2FRETS_HANDOFF_ZIP", f"/runpod-volume/midi2frets/{HANDOFF_NAME}"))
+
+
 def package_dir() -> Path:
     baked = Path("/opt/midi2frets")
     if (baked / "app_backend.py").is_file():
         return baked
-    archive = Path(os.getenv("MIDI2FRETS_HANDOFF_ZIP", f"/runpod-volume/midi2frets/{HANDOFF_NAME}"))
+    archive = handoff_archive()
     if not archive.is_file():
         raise FileNotFoundError(f"midi2frets handoff ZIP is missing: {archive}")
     digest = hashlib.sha256()

@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import os
 import tempfile
+import types
 import unittest
 import zipfile
 from pathlib import Path
@@ -31,6 +32,28 @@ class FretsVolumeTests(unittest.TestCase):
             with patch.dict(os.environ, {"MIDI2FRETS_HANDOFF_ZIP": str(archive)}):
                 with self.assertRaisesRegex(ValueError, "SHA256 mismatch"):
                     frets_worker.package_dir()
+
+    def test_private_hf_repo_uses_pinned_revision_and_token(self):
+        calls = {}
+
+        def fake_download(**kwargs):
+            calls.update(kwargs)
+            return "C:/test/handoff.zip"
+
+        with patch.dict(os.environ, {"MIDI2FRETS_HF_REPO": "owner/private-model",
+                                  "MIDI2FRETS_HF_REVISION": "a" * 40, "HF_TOKEN": "test-token"}), \
+             patch.dict("sys.modules", {"huggingface_hub": types.SimpleNamespace(hf_hub_download=fake_download)}):
+            archive = frets_worker.handoff_archive()
+        self.assertEqual(archive, Path("C:/test/handoff.zip"))
+        self.assertEqual(calls["repo_id"], "owner/private-model")
+        self.assertEqual(calls["revision"], "a" * 40)
+        self.assertEqual(calls["token"], "test-token")
+
+    def test_private_hf_repo_requires_revision(self):
+        with patch.dict(os.environ, {"MIDI2FRETS_HF_REPO": "owner/private-model", "HF_TOKEN": "test-token"}):
+            os.environ.pop("MIDI2FRETS_HF_REVISION", None)
+            with self.assertRaisesRegex(RuntimeError, "REVISION must be pinned"):
+                frets_worker.handoff_archive()
 
 
 if __name__ == "__main__":

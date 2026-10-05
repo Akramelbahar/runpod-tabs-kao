@@ -39,12 +39,29 @@ through the app. Start with zero active and one maximum worker per endpoint.
 
 ## Local midi2frets checkpoint
 
-The accepted midi2frets handoff ZIP is kept out of Git. The frets worker
-can use a RunPod network volume, so no local Docker or Docker Hub account is
-needed. `runpod/Dockerfile.frets.volume` builds the code and pinned dependencies
-from GitHub. The private ZIP stays on the attached network volume; the worker
-checks its full archive SHA256 before loading it. This path has not yet had a
-RunPod image build or live inference test.
+The accepted midi2frets handoff ZIP is kept out of Git. The preferred path
+without Docker or a RunPod volume is a private Hugging Face model repository.
+Upload the exact `accepted-core-app-handoff-v1-20261005.zip` file there through
+the Hugging Face web UI. Deploy `runpod/Dockerfile.frets.hf` from this GitHub
+repository as a Queue Serverless endpoint. Set these endpoint variables:
+
+- `MIDI2FRETS_HF_REPO=YOUR_HF_USERNAME/idealchords-midi2frets` (the actual private repository ID)
+- `MIDI2FRETS_HF_REVISION=FULL_HUGGING_FACE_COMMIT_SHA` (the commit containing the ZIP)
+- `HF_TOKEN=YOUR_READ_TOKEN` (a token permitted to read that private repository)
+- `MIDI2FRETS_CPU_THREADS=4`
+
+The worker downloads the ZIP once per cold worker, verifies archive SHA256
+`b4fcdb7a0c19b08b97fb5ab91d29bda47609ef2e60f4a4603bc8aac4453a932e`,
+and then loads the accepted model. Keep the token in RunPod's secret environment
+configuration, not in Git. A worker restart needs another 32 MB download.
+The image build and live inference still need RunPod verification.
+
+### Optional network-volume path
+
+`runpod/Dockerfile.frets.volume` builds the code and pinned dependencies from
+GitHub. The private ZIP stays on an attached RunPod network volume; the worker
+checks its full archive SHA256 before loading it. This path needs an ongoing
+volume charge and an S3 API key for upload.
 
 1. In RunPod Storage, create a Standard network volume in a datacenter that
    supports its S3-compatible API. Record the volume ID and datacenter ID.
