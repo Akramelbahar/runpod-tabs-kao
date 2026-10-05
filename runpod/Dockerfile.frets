@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 ARG RUNPOD_VERSION=1.12.0
 RUN test -n "$RUNPOD_VERSION"

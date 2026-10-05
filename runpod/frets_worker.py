@@ -3,18 +3,42 @@ from __future__ import annotations
 
 import json
 import os
+import hashlib
+import tempfile
+import zipfile
 from pathlib import Path
 
 from common import MAX_JSON_BYTES, download, require_input, upload_json, workdir
 
 _backend = None
+HANDOFF_SHA256 = "b4fcdb7a0c19b08b97fb5ab91d29bda47609ef2e60f4a4603bc8aac4453a932e"
+HANDOFF_NAME = "accepted-core-app-handoff-v1-20261005.zip"
+
+
+def package_dir() -> Path:
+    baked = Path("/opt/midi2frets")
+    if (baked / "app_backend.py").is_file():
+        return baked
+    archive = Path(os.getenv("MIDI2FRETS_HANDOFF_ZIP", f"/runpod-volume/midi2frets/{HANDOFF_NAME}"))
+    if not archive.is_file():
+        raise FileNotFoundError(f"midi2frets handoff ZIP is missing: {archive}")
+    digest = hashlib.sha256()
+    with archive.open("rb") as source:
+        while chunk := source.read(1024 * 1024):
+            digest.update(chunk)
+    if digest.hexdigest() != HANDOFF_SHA256:
+        raise ValueError("midi2frets handoff ZIP SHA256 mismatch")
+    target = Path(tempfile.mkdtemp(prefix="midi2frets-"))
+    with zipfile.ZipFile(archive) as package:
+        package.extractall(target)
+    return target
 
 
 def backend():
     global _backend
     if _backend is None:
         import sys
-        sys.path.insert(0, "/opt/midi2frets")
+        sys.path.insert(0, str(package_dir()))
         from app_backend import GuitarBackend
 
         _backend = GuitarBackend(device="cpu", cpu_threads=int(os.getenv("MIDI2FRETS_CPU_THREADS", "4")))

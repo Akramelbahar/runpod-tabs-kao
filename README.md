@@ -40,12 +40,43 @@ through the app. Start with zero active and one maximum worker per endpoint.
 ## Local midi2frets checkpoint
 
 The accepted midi2frets handoff ZIP is kept out of Git. The frets worker
-requires a separate **private** container image built on the machine holding
-the ZIP; selecting `runpod/Dockerfile.frets` in RunPod's GitHub builder will
-fail because the ignored ZIP is absent from the GitHub checkout. The staging
-script copies the ZIP to `runpod/vendor/` and verifies the checkpoint SHA256
-before the local build. The Dockerfile runs the handoff's package verification
-during the build.
+can use a RunPod network volume, so no local Docker or Docker Hub account is
+needed. `runpod/Dockerfile.frets.volume` builds the code and pinned dependencies
+from GitHub. The private ZIP stays on the attached network volume; the worker
+checks its full archive SHA256 before loading it. This path has not yet had a
+RunPod image build or live inference test.
+
+1. In RunPod Storage, create a Standard network volume in a datacenter that
+   supports its S3-compatible API. Record the volume ID and datacenter ID.
+2. In RunPod Credentials, create an S3 API key. Configure the AWS CLI on your
+   laptop with that key; Docker is not needed.
+3. Upload `accepted-core-app-handoff-v1-20261005.zip` to
+   `s3://VOLUME_ID/midi2frets/accepted-core-app-handoff-v1-20261005.zip`.
+   RunPod maps that object to
+   `/runpod-volume/midi2frets/accepted-core-app-handoff-v1-20261005.zip`.
+4. Create a Queue Serverless endpoint from this GitHub repository using
+   `runpod/Dockerfile.frets.volume`. Attach the same network volume in the
+   endpoint's Advanced → Network Volumes settings. Set
+   `MIDI2FRETS_CPU_THREADS=4`; the default ZIP path needs no environment
+   variable. Begin with one maximum worker.
+
+Example PowerShell upload after `aws configure --profile runpod-volume`:
+
+```powershell
+aws s3 cp --profile runpod-volume --region DATACENTER --endpoint-url https://s3api-DATACENTER.runpod.io/ ..\accepted-core-app-handoff-v1-20261005.zip s3://VOLUME_ID/midi2frets/accepted-core-app-handoff-v1-20261005.zip
+```
+
+Replace `DATACENTER` and `VOLUME_ID` with values from your RunPod volume. The
+worker requires this exact accepted ZIP (archive SHA256
+`b4fcdb7a0c19b08b97fb5ab91d29bda47609ef2e60f4a4603bc8aac4453a932e`).
+
+### Optional local-Docker image path
+
+The other `runpod/Dockerfile.frets` bakes the ZIP into a private image. Only
+use this path if you later install Docker. Selecting it in RunPod's GitHub
+builder will fail because the ignored ZIP is absent from the checkout. The
+staging script copies the ZIP to `runpod/vendor/` and verifies the checkpoint
+SHA256 before the local build.
 
 From this repository's root in PowerShell, after installing Docker Desktop:
 
