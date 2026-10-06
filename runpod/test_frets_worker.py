@@ -55,6 +55,14 @@ class FretsVolumeTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "REVISION must be pinned"):
                 frets_worker.handoff_archive()
 
+    def test_check_model_loads_backend_without_artifact_urls(self):
+        with patch.object(frets_worker, "backend") as load_backend:
+            result = frets_worker.handler({"input": {"schemaVersion": 1, "stage": "frets",
+                                                       "jobId": "check-1", "action": "check_model"}})
+        load_backend.assert_called_once_with()
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(result["jobId"], "check-1")
+
 
 if __name__ == "__main__":
     unittest.main()

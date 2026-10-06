@@ -63,6 +63,10 @@ def backend():
 
 def handler(job: dict) -> dict:
     data = require_input(job, "frets")
+    if data.get("action") == "check_model":
+        backend()
+        return {"schemaVersion": 1, "stage": "frets", "jobId": data["jobId"],
+                "status": "ready", "model": "accepted-core-52a178b6d3d5"}
     with workdir() as temporary:
         path = Path(temporary) / "request.json"
         download(data.get("inputUrl"), path, MAX_JSON_BYTES, data.get("inputSha256"))
